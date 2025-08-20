@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DumpWatcher - 不法投棄検知システム</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: white;
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+        }
+        
+        .logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 3rem;
+            margin: 2rem 0;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+        }
+        
+        .upload-area.dragover {
+            border-color: #764ba2;
+            background: #e8ebff;
+            transform: scale(1.02);
+        }
+        
+        .upload-icon {
+            font-size: 4rem;
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+        
+        .upload-text {
+            font-size: 1.2rem;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .upload-hint {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .selected-file {
+            background: #e8f5e8;
+            border: 2px solid #4caf50;
+            padding: 1rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+            display: none;
+        }
+        
+        .file-name {
+            font-weight: bold;
+            color: #2e7d32;
+        }
+        
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+            display: none;
+        }
+        
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .upload-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .flash-messages {
+            margin-bottom: 1rem;
+        }
+        
+        .flash-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 1rem;
+            border-radius: 10px;
+            border-left: 4px solid #e53935;
+        }
+        
+        .features {
+            margin-top: 3rem;
+            text-align: left;
+        }
+        
+        .features h3 {
+            color: #333;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .feature-list {
+            list-style: none;
+        }
+        
+        .feature-list li {
+            padding: 0.5rem 0;
+            color: #555;
+        }
+        
+        .feature-list li:before {
+            content: "✓";
+            color: #4caf50;
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+        
+        .loading {
+            display: none;
+            margin-top: 1rem;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🎯 DumpWatcher</div>
+        <div class="subtitle">
+            AI搭載の不法投棄検知システム<br>
+            監視カメラの映像から自動で不法投棄を検知します
+        </div>
+        
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for message in messages %}
+                        <div class="flash-message">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        <form id="uploadForm" method="POST" enctype="multipart/form-data" action="/upload">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📹</div>
+                <div class="upload-text">動画ファイルをここにドラッグ&ドロップ</div>
+                <div class="upload-hint">または クリックしてファイルを選択</div>
+                <input type="file" name="file" id="fileInput" class="file-input" accept=".mp4,.avi,.mov,.mkv">
+            </div>
+            
+            <div class="selected-file" id="selectedFile">
+                <div>選択されたファイル:</div>
+                <div class="file-name" id="fileName"></div>
+            </div>
+            
+            <button type="submit" class="upload-btn" id="uploadBtn">解析を開始</button>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <div style="margin-top: 1rem;">アップロード中...</div>
+            </div>
+        </form>
+        
+        <div class="features">
+            <h3>主な機能</h3>
+            <ul class="feature-list">
+                <li>YOLOv8による高精度物体検出</li>
+                <li>不法投棄シナリオの自動判定</li>
+                <li>証拠画像・動画の自動保存</li>
+                <li>詳細な解析ログの出力</li>
+                <li>対応形式: MP4, AVI, MOV, MKV</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const selectedFile = document.getElementById('selectedFile');
+        const fileName = document.getElementById('fileName');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const uploadForm = document.getElementById('uploadForm');
+        const loading = document.getElementById('loading');
+
+        // ドラッグ&ドロップ
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFileSelect();
+            }
+        });
+        
+        fileInput.addEventListener('change', handleFileSelect);
+        
+        function handleFileSelect() {
+            const file = fileInput.files[0];
+            if (file) {
+                fileName.textContent = file.name;
+                selectedFile.style.display = 'block';
+                uploadBtn.style.display = 'inline-block';
+            }
+        }
+        
+        uploadForm.addEventListener('submit', (e) => {
+            uploadBtn.disabled = true;
+            loading.style.display = 'block';
+        });
+    </script>
+</body>
+</html>

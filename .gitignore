@@ -1,0 +1,37 @@
+# 実行時生成ファイル
+results/
+uploads/
+*.mp4
+*.jpg
+*.jpeg
+*.png
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# Docker
+.dockerignore
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# YOLOモデル
+*.pt
+yolov8*.pt
+
+# ログ
+*.log

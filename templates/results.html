@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>解析結果 - DumpWatcher</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .content {
+            padding: 2rem;
+        }
+        
+        .status-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .status-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        
+        .status-text {
+            font-size: 1.2rem;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .status-message {
+            color: #666;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 5px;
+            transition: width 0.3s ease;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .result-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 1.5rem;
+            border-left: 5px solid #667eea;
+        }
+        
+        .result-card h3 {
+            color: #333;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .result-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .events-list {
+            margin-top: 1rem;
+        }
+        
+        .event-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid #ff5722;
+        }
+        
+        .event-details {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .download-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .download-section h3 {
+            color: #333;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .download-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .download-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            text-decoration: none;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .back-btn:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .cleanup-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-left: 1rem;
+        }
+        
+        .cleanup-btn:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 DumpWatcher</h1>
+            <p>解析結果</p>
+        </div>
+        
+        <div class="content">
+            <div class="status-card" id="statusCard">
+                <div class="status-icon" id="statusIcon">⏳</div>
+                <div class="status-text" id="statusText">解析中...</div>
+                <div class="status-message" id="statusMessage">しばらくお待ちください</div>
+                <div class="progress-bar" id="progressBar">
+                    <div class="progress-fill" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <div class="results-grid hidden" id="resultsGrid">
+                <div class="result-card">
+                    <h3>🚨 確定した不法投棄</h3>
+                    <div class="result-number" id="confirmedEvents">0</div>
+                    <div class="events-list" id="eventsList"></div>
+                </div>
+                
+                <div class="result-card">
+                    <h3>⏸️ 保留中のイベント</h3>
+                    <div class="result-number" id="pendingEvents">0</div>
+                </div>
+                
+                <div class="result-card">
+                    <h3>📸 証拠画像</h3>
+                    <div class="result-number" id="evidenceImages">0</div>
+                </div>
+            </div>
+            
+            <div class="download-section hidden" id="downloadSection">
+                <h3>📥 結果ファイルをダウンロード</h3>
+                <div class="download-buttons">
+                    <a href="#" class="download-btn" id="downloadVideo">
+                        🎬 解析済み動画
+                    </a>
+                    <a href="#" class="download-btn hidden" id="downloadEvidence" target="_blank">
+                        📸 証拠画像を表示
+                    </a>
+                    <button class="download-btn hidden" id="testEvidenceBtn" onclick="testEvidenceClick()">
+                        🧪 証拠画像テスト
+                    </button>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 2rem;">
+                <a href="/" class="back-btn">
+                    ← 新しい解析を開始
+                </a>
+                <button class="cleanup-btn hidden" id="cleanupBtn" onclick="cleanupTask()">
+                    🗑️ ファイルを削除
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const taskId = '{{ task_id }}';
+        let pollInterval;
+
+        function updateStatus() {
+            fetch(`/api/status/${taskId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const statusIcon = document.getElementById('statusIcon');
+                    const statusText = document.getElementById('statusText');
+                    const statusMessage = document.getElementById('statusMessage');
+                    const progressBar = document.getElementById('progressBar');
+                    const resultsGrid = document.getElementById('resultsGrid');
+                    const downloadSection = document.getElementById('downloadSection');
+                    const cleanupBtn = document.getElementById('cleanupBtn');
+
+                    if (data.status === 'queued') {
+                        statusIcon.textContent = '⏳';
+                        statusText.textContent = '待機中...';
+                        statusMessage.textContent = data.message;
+                    } else if (data.status === 'processing') {
+                        statusIcon.textContent = '🔄';
+                        statusText.textContent = '解析中...';
+                        statusMessage.textContent = data.message;
+                        progressBar.querySelector('.progress-fill').style.width = '50%';
+                    } else if (data.status === 'completed') {
+                        statusIcon.textContent = '✅';
+                        statusText.textContent = '解析完了!';
+                        statusMessage.textContent = '結果を確認してください';
+                        progressBar.querySelector('.progress-fill').style.width = '100%';
+                        
+                        // 結果を表示
+                        displayResults(data.results);
+                        resultsGrid.classList.remove('hidden');
+                        downloadSection.classList.remove('hidden');
+                        cleanupBtn.classList.remove('hidden');
+                        
+                        // ダウンロードリンクを設定
+                        document.getElementById('downloadVideo').href = `/download/${taskId}/video`;
+                        
+                        // 証拠画像ボタンの表示制御
+                        const evidenceBtn = document.getElementById('downloadEvidence');
+                        const testEvidenceBtn = document.getElementById('testEvidenceBtn');
+                        if (data.results && (data.results.confirmed_events > 0 || data.results.evidence_images > 0)) {
+                            evidenceBtn.href = `/download/${taskId}/evidence`;
+                            evidenceBtn.classList.remove('hidden');
+                            testEvidenceBtn.classList.remove('hidden');
+                            console.log('証拠画像ボタンを表示しました');
+                        } else {
+                            console.log('確定イベントがないため証拠画像ボタンは非表示です');
+                        }
+                        
+                        clearInterval(pollInterval);
+                    } else if (data.status === 'error') {
+                        statusIcon.textContent = '❌';
+                        statusText.textContent = 'エラーが発生しました';
+                        statusMessage.textContent = data.message;
+                        progressBar.style.display = 'none';
+                        clearInterval(pollInterval);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+        function displayResults(results) {
+            console.log('結果データ:', results);
+            document.getElementById('confirmedEvents').textContent = results.confirmed_events;
+            document.getElementById('pendingEvents').textContent = results.pending_events;
+            document.getElementById('evidenceImages').textContent = results.evidence_images || 0;
+            console.log('証拠画像数:', results.evidence_images);
+            
+            const eventsList = document.getElementById('eventsList');
+            if (results.events_detail && results.events_detail.length > 0) {
+                eventsList.innerHTML = results.events_detail.map(event => `
+                    <div class="event-item">
+                        <div><strong>${event.time_in_video || 'フレーム' + event.frame}</strong></div>
+                        <div class="event-details">
+                            ${event.suspect} → ${event.object} を投棄
+                            ${event.distance_change ? `<br><small>距離変化: ${event.distance_change}</small>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                eventsList.innerHTML = '<div style="color: #666;">検知されたイベントはありません</div>';
+            }
+        }
+
+        function testEvidenceClick() {
+            const taskId = '{{ task_id }}';
+            const evidenceUrl = `/download/${taskId}/evidence`;
+            console.log('証拠画像URLにアクセス:', evidenceUrl);
+            window.open(evidenceUrl, '_blank');
+        }
+
+        function cleanupTask() {
+            if (confirm('このタスクのファイルを削除しますか？')) {
+                fetch(`/api/cleanup/${taskId}`, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.message) {
+                            alert('ファイルを削除しました');
+                            window.location.href = '/';
+                        } else if (data.error) {
+                            alert('エラー: ' + data.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('削除に失敗しました');
+                    });
+            }
+        }
+
+        // 定期的にステータスを更新
+        updateStatus();
+        pollInterval = setInterval(updateStatus, 2000);
+    </script>
+</body>
+</html>

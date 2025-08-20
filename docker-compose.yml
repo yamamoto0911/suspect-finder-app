@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  dumpwatcher:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      # アップロードファイルと結果を永続化
+      - ./uploads:/app/uploads
+      - ./results:/app/results
+      # ホットリロード用のソースコードマウント
+      - ./web_app.py:/app/web_app.py
+      - ./dump_watcher.py:/app/dump_watcher.py
+      - ./templates:/app/templates
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped

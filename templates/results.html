@@ -253,9 +253,6 @@
                     <a href="#" class="download-btn hidden" id="downloadEvidence" target="_blank">
                         📸 証拠画像を表示
                     </a>
-                    <button class="download-btn hidden" id="testEvidenceBtn" onclick="testEvidenceClick()">
-                        🧪 証拠画像テスト
-                    </button>
                 </div>
             </div>
             
@@ -312,11 +309,9 @@
                         
                         // 証拠画像ボタンの表示制御
                         const evidenceBtn = document.getElementById('downloadEvidence');
-                        const testEvidenceBtn = document.getElementById('testEvidenceBtn');
                         if (data.results && (data.results.confirmed_events > 0 || data.results.evidence_images > 0)) {
                             evidenceBtn.href = `/download/${taskId}/evidence`;
                             evidenceBtn.classList.remove('hidden');
-                            testEvidenceBtn.classList.remove('hidden');
                             console.log('証拠画像ボタンを表示しました');
                         } else {
                             console.log('確定イベントがないため証拠画像ボタンは非表示です');
@@ -359,12 +354,6 @@
             }
         }
 
-        function testEvidenceClick() {
-            const taskId = '{{ task_id }}';
-            const evidenceUrl = `/download/${taskId}/evidence`;
-            console.log('証拠画像URLにアクセス:', evidenceUrl);
-            window.open(evidenceUrl, '_blank');
-        }
 
         function cleanupTask() {
             if (confirm('このタスクのファイルを削除しますか？')) {
